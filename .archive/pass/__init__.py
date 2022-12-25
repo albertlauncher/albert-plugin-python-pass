@@ -8,6 +8,8 @@ Synopsis:
     <trigger> generate <location>
     <trigger> <filter>"""
 
+#  Copyright (c) 2022 Manuel Schneider
+
 import fnmatch
 import os
 from albert import *
