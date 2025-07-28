@@ -12,7 +12,7 @@ md_version = "2.0"
 md_name = "Pass"
 md_description = "Manage passwords in pass"
 md_license = "BSD-3"
-md_url = "https://github.com/albertlauncher/python/tree/main/pass"
+md_url = "https://github.com/albertlauncher/albert-plugin-python-pass"
 md_authors = ["@benedictdudel", "@maxmil", "@Pete-Hamlin"]
 md_bin_dependencies = ["pass"]
 
