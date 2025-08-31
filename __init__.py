@@ -13,7 +13,8 @@ md_name = "Pass"
 md_description = "Manage passwords in pass"
 md_license = "BSD-3"
 md_url = "https://github.com/albertlauncher/albert-plugin-python-pass"
-md_authors = ["@benedictdudel", "@maxmil", "@Pete-Hamlin"]
+md_authors = ["@benedictdudel", "@maxmil", "@Pete-Hamlin", "@okaestne"]
+md_maintainers = ["@maxmil", "@okaestne", "@Pete-Hamlin"]
 md_bin_dependencies = ["pass"]
 
 HOME_DIR = os.environ["HOME"]
