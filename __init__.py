@@ -7,7 +7,7 @@ import fnmatch
 import os
 from albert import *
 
-md_iid = "3.0"
+md_iid = "4.0"
 md_version = "2.0"
 md_name = "Pass"
 md_description = "Manage passwords in pass"
@@ -25,9 +25,12 @@ class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self):
         PluginInstance.__init__(self)
         TriggerQueryHandler.__init__(self)
-        self.iconUrls = ["xdg:dialog-password"]
         self._use_otp = self.readConfig("use_otp", bool) or False
         self._otp_glob = self.readConfig("otp_glob", str) or "*-otp.gpg"
+
+    @staticmethod
+    def makeIcon():
+        return makeThemeIcon("dialog-password")
 
     @property
     def use_otp(self):
@@ -80,7 +83,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         query.add(
             StandardItem(
                 id="generate_password",
-                iconUrls=self.iconUrls,
+                iconFactory=Plugin.makeIcon,
                 text="Generate a new password",
                 subtext="The new password will be located at %s" % location,
                 inputActionText="pass %s" % query.string,
@@ -107,7 +110,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             results.append(
                 StandardItem(
                     id=password,
-                    iconUrls=self.iconUrls,
+                    iconFactory=Plugin.makeIcon,
                     text=password.split("/")[-1],
                     subtext=password,
                     actions=[
@@ -135,7 +138,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     id=password,
                     text=name,
                     subtext=password,
-                    iconUrls=self.iconUrls,
+                    iconFactory=Plugin.makeIcon,
                     inputActionText="pass %s" % password,
                     actions=[
                         Action(
