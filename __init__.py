@@ -83,10 +83,10 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         query.add(
             StandardItem(
                 id="generate_password",
-                iconFactory=Plugin.makeIcon,
+                icon_factory=Plugin.makeIcon,
                 text="Generate a new password",
                 subtext="The new password will be located at %s" % location,
-                inputActionText="pass %s" % query.string,
+                input_action_text="pass %s" % query.string,
                 actions=[
                     Action(
                         "generate",
@@ -110,7 +110,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             results.append(
                 StandardItem(
                     id=password,
-                    iconFactory=Plugin.makeIcon,
+                    icon_factory=Plugin.makeIcon,
                     text=password.split("/")[-1],
                     subtext=password,
                     actions=[
@@ -138,8 +138,8 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     id=password,
                     text=name,
                     subtext=password,
-                    iconFactory=Plugin.makeIcon,
-                    inputActionText="pass %s" % password,
+                    icon_factory=Plugin.makeIcon,
+                    input_action_text="pass %s" % password,
                     actions=[
                         Action(
                             "copy",
