@@ -5,9 +5,10 @@
 
 import fnmatch
 import os
+
 from albert import *
 
-md_iid = "4.0"
+md_iid = "5.0"
 md_version = "2.0.1"
 md_name = "Pass"
 md_description = "Manage passwords in pass"
@@ -21,10 +22,10 @@ HOME_DIR = os.environ["HOME"]
 PASS_DIR = os.environ.get("PASSWORD_STORE_DIR", os.path.join(HOME_DIR, ".password-store/"))
 
 
-class Plugin(PluginInstance, TriggerQueryHandler):
+class Plugin(PluginInstance, GeneratorQueryHandler):
     def __init__(self):
         PluginInstance.__init__(self)
-        TriggerQueryHandler.__init__(self)
+        GeneratorQueryHandler.__init__(self)
         self._use_otp = self.readConfig("use_otp", bool) or False
         self._otp_glob = self.readConfig("otp_glob", str) or "*-otp.gpg"
 
@@ -69,36 +70,36 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             },
         ]
 
-    def handleTriggerQuery(self, query):
-        if query.string.strip().startswith("generate"):
-            self.generatePassword(query)
-        elif query.string.strip().startswith("otp") and self._use_otp:
-            self.showOtp(query)
+    def items(self, context: QueryContext):
+        q = context.query.strip()
+
+        if q.startswith("generate"):
+            yield [self.generatePassword(q)]
+        elif q.startswith("otp") and self._use_otp:
+            yield self.showOtp(q)
         else:
-            self.showPasswords(query)
+            yield self.showPasswords(q)
 
-    def generatePassword(self, query):
-        location = query.string.strip()[9:]
+    def generatePassword(self, query) -> Item:
+        location = query.strip()[9:]
 
-        query.add(
-            StandardItem(
-                id="generate_password",
-                icon_factory=Plugin.makeIcon,
-                text="Generate a new password",
-                subtext="The new password will be located at %s" % location,
-                input_action_text="pass %s" % query.string,
-                actions=[
-                    Action(
-                        "generate",
-                        "Generate",
-                        lambda: runDetachedProcess(["pass", "generate", "--clip", location, "20"]),
-                    )
-                ],
-            )
+        return StandardItem(
+            id="generate_password",
+            icon_factory=Plugin.makeIcon,
+            text="Generate a new password",
+            subtext="The new password will be located at %s" % location,
+            input_action_text="pass %s" % query,
+            actions=[
+                Action(
+                    "generate",
+                    "Generate",
+                    lambda: runDetachedProcess(["pass", "generate", "--clip", location, "20"]),
+                )
+            ],
         )
 
-    def showOtp(self, query):
-        otp_query = query.string.strip()[4:]
+    def showOtp(self, query) -> list[Item]:
+        otp_query = query.strip()[4:]
         passwords = []
         if otp_query:
             passwords = self.getPasswordsFromSearch(otp_query, otp=True)
@@ -122,11 +123,11 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                     ],
                 ),
             )
-        query.add(results)
+        return results
 
-    def showPasswords(self, query):
-        if query.string.strip():
-            passwords = self.getPasswordsFromSearch(query.string)
+    def showPasswords(self, query) -> list[Item]:
+        if query.strip():
+            passwords = self.getPasswordsFromSearch(query)
         else:
             passwords = self.getPasswords()
 
@@ -160,7 +161,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 ),
             )
 
-        query.add(results)
+        return results
 
     def getPasswords(self, otp=False):
         passwords = []
