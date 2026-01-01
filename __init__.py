@@ -5,6 +5,8 @@
 
 import fnmatch
 import os
+from collections.abc import Generator
+
 from albert import *
 
 md_iid = "5.0"
@@ -69,13 +71,15 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
             },
         ]
 
-    def handleThreadedQuery(self, ctx):
-        if ctx.query.strip().startswith("generate"):
-            yield [self.generatePassword(ctx.query)]
-        elif ctx.query.strip().startswith("otp") and self._use_otp:
-            yield self.showOtp(ctx.query)
+    def items(self, context: QueryContext) -> Generator[list[Item], None, None]:
+        q = context.query.strip()
+
+        if q.startswith("generate"):
+            yield [self.generatePassword(q)]
+        elif q.startswith("otp") and self._use_otp:
+            yield self.showOtp(q)
         else:
-            yield self.showPasswords(ctx.query)
+            yield self.showPasswords(q)
 
     def generatePassword(self, query) -> Item:
         location = query.strip()[9:]
