@@ -31,7 +31,7 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
 
     @staticmethod
     def makeIcon():
-        return makeThemeIcon("dialog-password")
+        return Icon.theme("dialog-password")
 
     @property
     def use_otp(self):
@@ -100,7 +100,6 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
 
     def showOtp(self, query) -> list[Item]:
         otp_query = query.strip()[4:]
-        passwords = []
         if otp_query:
             passwords = self.getPasswordsFromSearch(otp_query, otp=True)
         else:
