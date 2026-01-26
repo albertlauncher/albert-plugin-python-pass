@@ -81,7 +81,14 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
             yield self.showPasswords(q)
 
     def generatePassword(self, query) -> Item:
-        location = query.strip()[9:]
+        location = query.strip()[9:].strip()
+        if not location:
+            return StandardItem(
+                id="generate_password",
+                icon_factory=Plugin.makeIcon,
+                text="Can't generate a new password",
+                subtext="The location for the new password is invalid",
+            )
 
         return StandardItem(
             id="generate_password",
