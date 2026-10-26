@@ -9,7 +9,7 @@ import os
 from albert import *
 
 md_iid = "5.0"
-md_version = "2.0.3"
+md_version = "2.0.4"
 md_name = "Pass"
 md_description = "Manage passwords in pass"
 md_license = "MIT"
