@@ -3,10 +3,11 @@
 # Copyright (c) 2023 Max
 # Copyright (c) 2023 Pete-Hamlin
 
-import fnmatch
-import os
+import shutil
 
 from albert import *
+from gopass_impl import GoPassBackend
+from pass_impl import PassBackend
 
 md_iid = "5.0"
 md_version = "2.0.4"
@@ -16,10 +17,7 @@ md_license = "MIT"
 md_url = "https://github.com/albertlauncher/albert-plugin-python-pass"
 md_authors = ["@benedictdudel", "@maxmil", "@Pete-Hamlin", "@okaestne"]
 md_maintainers = ["@maxmil", "@okaestne", "@Pete-Hamlin"]
-md_bin_dependencies = ["pass"]
-
-HOME_DIR = os.environ["HOME"]
-PASS_DIR = os.environ.get("PASSWORD_STORE_DIR", os.path.join(HOME_DIR, ".password-store/"))
+md_bin_dependencies = []
 
 
 class Plugin(PluginInstance, GeneratorQueryHandler):
@@ -28,6 +26,16 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
         GeneratorQueryHandler.__init__(self)
         self._use_otp = self.readConfig("use_otp", bool) or False
         self._otp_glob = self.readConfig("otp_glob", str) or "*-otp.gpg"
+        self.backend = self._make_backend()
+
+    @staticmethod
+    def _make_backend():
+        # Prefer pass when both are installed: its OTP-file discovery is supported.
+        if executable := shutil.which("pass"):
+            return PassBackend(executable)
+        if executable := shutil.which("gopass"):
+            return GoPassBackend(executable)
+        return None
 
     @staticmethod
     def makeIcon():
@@ -73,6 +81,15 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
     def items(self, context: QueryContext):
         q = context.query.strip()
 
+        if self.backend is None:
+            yield [StandardItem(
+                id="missing-password-store",
+                icon_factory=Plugin.makeIcon,
+                text="No password store executable found",
+                subtext="Install pass or gopass to use this plugin",
+            )]
+            return
+
         if q.startswith("generate"):
             yield [self.generatePassword(q)]
         elif q.startswith("otp") and self._use_otp:
@@ -100,7 +117,7 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
                 Action(
                     "generate",
                     "Generate",
-                    lambda: runDetachedProcess(["pass", "generate", "--clip", location, "20"]),
+                    lambda: runDetachedProcess(self.backend.generate_command(location)),
                 )
             ],
         )
@@ -124,7 +141,7 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
                         Action(
                             "copy",
                             "Copy",
-                            lambda pwd=password: runDetachedProcess(["pass", "otp", "--clip", pwd]),
+                            lambda pwd=password: runDetachedProcess(self.backend.otp_command(pwd)),
                         ),
                     ],
                 ),
@@ -151,17 +168,17 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
                         Action(
                             "copy",
                             "Copy",
-                            lambda pwd=password: runDetachedProcess(["pass", "--clip", pwd]),
+                            lambda pwd=password: runDetachedProcess(self.backend.copy_command(pwd)),
                         ),
                         Action(
                             "edit",
                             "Edit",
-                            lambda pwd=password: runDetachedProcess(["pass", "edit", pwd]),
+                            lambda pwd=password: runDetachedProcess(self.backend.edit_command(pwd)),
                         ),
                         Action(
                             "remove",
                             "Remove",
-                            lambda pwd=password: runDetachedProcess(["pass", "rm", "--force", pwd]),
+                            lambda pwd=password: runDetachedProcess(self.backend.remove_command(pwd)),
                         ),
                     ],
                 ),
@@ -170,12 +187,7 @@ class Plugin(PluginInstance, GeneratorQueryHandler):
         return results
 
     def getPasswords(self, otp=False):
-        passwords = []
-        for root, dirnames, filenames in os.walk(PASS_DIR, followlinks=True):
-            for filename in fnmatch.filter(filenames, self._otp_glob if otp else "*.gpg"):
-                passwords.append(os.path.join(root, filename.replace(".gpg", "")).replace(PASS_DIR, ""))
-
-        return sorted(passwords, key=lambda s: s.lower())
+        return self.backend.passwords(otp=otp, otp_glob=self._otp_glob)
 
     def getPasswordsFromSearch(self, otp_query, otp=False):
         passwords = [password for password in self.getPasswords(otp) if otp_query.strip().lower() in password.lower()]
